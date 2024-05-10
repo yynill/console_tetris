@@ -19,6 +19,5 @@ void moveShapeRight(struct Shape *shape)
     shape->col++;
 }
 
-int isShapeOnGround(struct Tile board[HEIGHT][WIDTH], struct Shape shape) {}
-
-int shapeCollisio() {}
+// int isShapeOnGround(struct Tile board[HEIGHT][WIDTH], struct Shape shape) {}
+// int shapeCollisio() {}

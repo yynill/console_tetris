@@ -24,8 +24,34 @@ const char tetromino[7][17] = {
     "..X...X..XX....."  // Z-shape - 6
 };
 
-void renderGame(struct Tile board[HEIGHT][WIDTH])
+void renderGame(struct Tile board[HEIGHT][WIDTH], struct Shape activeShape)
 {
+    // Set the whole board to 0
+    for (int j = 0; j < HEIGHT; j++)
+    {
+        for (int i = 0; i < WIDTH; i++)
+        {
+            board[j][i].entry = 0;
+        }
+    }
+    // update board
+    const char *shape = tetromino[activeShape.index];
+
+    int shapeRow = 0;
+    for (int j = activeShape.row; j < activeShape.row + 4; j++)
+    {
+        int shapeCol = 0;
+        for (int i = activeShape.col; i < activeShape.col + 4; i++)
+        {
+            if (shape[shapeRow * 4 + shapeCol] == 'X')
+            {
+                board[j][i].entry = 1;
+            }
+            shapeCol++;
+        }
+        shapeRow++;
+    }
+
     // Clear the screen to redraw the game state
     printf("\033[H\033[J");
 
@@ -64,36 +90,30 @@ void renderGame(struct Tile board[HEIGHT][WIDTH])
     printf("┘\n");
 }
 
-int generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col)
+struct Shape generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col)
 {
-    const char *shape = tetromino[shapeIndex];
+    struct Shape newShape;
 
     // check if row and col are valid
     if (row >= HEIGHT - 4 || col >= WIDTH - 4)
     {
-        return 0;
+        // Return an empty shape indicating failure
+        newShape.index = -1;
+        return newShape;
     }
 
-    // Draw the shape onto the board
-    int shapeRow = 0;
-    for (int j = row; j < row + 4; j++)
-    {
-        int shapeCol = 0;
-        for (int i = col; i < col + 4; i++)
-        {
-            if (shape[shapeRow * 4 + shapeCol] == 'X')
-            {
-                // Set the corresponding cell in the board to indicate the shape
-                board[j][i].entry = 1;
-            }
-            shapeCol++;
-        }
-        shapeRow++;
-    }
-    return 1;
+    newShape.moveDown = &moveShapeDown;
+    newShape.moveLeft = &moveShapeLeft;
+    newShape.moveRight = &moveShapeRight;
+
+    newShape.index = shapeIndex;
+    newShape.row = row;
+    newShape.col = col;
+
+    return newShape;
 }
 
-int handleKeyInputs()
+int handleKeyInputs(struct Shape *activeShape)
 {
     struct termios oldt, newt;
     int ch;
@@ -121,11 +141,13 @@ int handleKeyInputs()
     else if (ch == 'w')
         printf("print: w\n");
     else if (ch == 's')
-        printf("print: s\n");
+        activeShape->moveDown(activeShape);
     else if (ch == 'a')
-        printf("print: a\n");
+        activeShape->moveLeft(activeShape);
     else if (ch == 'd')
-        printf("print: d\n");
+        activeShape->moveRight(activeShape);
+
+    printf("active shape row: %d, col: %d\n", activeShape->row, activeShape->col);
 
     return 1;
 }

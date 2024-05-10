@@ -10,10 +10,10 @@
 #include "shape.h"
 
 int generateRandomNumber(int min, int max);
-void renderGame(struct Tile board[HEIGHT][WIDTH]);
-int generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col);
+void renderGame(struct Tile board[HEIGHT][WIDTH], struct Shape activeShape);
+struct Shape generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col);
 void initTile(struct Tile *tile, int row, int col, int entry);
-int handleKeyInputs();
+int handleKeyInputs(struct Shape *activeShape);
 
 int main()
 {
@@ -48,15 +48,15 @@ int main()
             NextRandomShape = generateRandomNumber(0, 6);
             nextShape = 0;
 
-            generateShape(board, ThisRandomShape, 3, 4);
+            activeShape = generateShape(board, ThisRandomShape, 3, 4);
         }
 
-        running = handleKeyInputs();
+        running = handleKeyInputs(&activeShape);
 
         // Limit frame rate
         usleep(5 * 1000000 / 60);
 
-        renderGame(board);
+        renderGame(board, activeShape);
     }
 
     return 0;
