@@ -1,5 +1,7 @@
 {
   "files.associations": {
-    "gamevariables.h": "c"
+    "gamevariables.h": "c",
+    "stdio.h": "c",
+    "unistd.h": "c"
   }
 }

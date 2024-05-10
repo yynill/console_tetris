@@ -1,9 +1,18 @@
 // gameFunctions.c
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <termios.h>
+#include <fcntl.h>
 #include "gameVariables.h"
 #include "tile.h"
+#include "shape.h"
+
+int generateRandomNumber(int min, int max)
+{
+    return min + rand() % (max - min + 1);
+}
 
 const char tetromino[7][17] = {
     "..X...X...X...X.", // I-shape - 0
@@ -55,13 +64,9 @@ void renderGame(struct Tile board[HEIGHT][WIDTH])
     printf("┘\n");
 }
 
-int drawShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col)
+int generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col)
 {
     const char *shape = tetromino[shapeIndex];
-    // . . X .
-    // . . X .
-    // . . X .
-    // . . X .
 
     // check if row and col are valid
     if (row >= HEIGHT - 4 || col >= WIDTH - 4)
@@ -85,5 +90,42 @@ int drawShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col
         }
         shapeRow++;
     }
+    return 1;
+}
+
+int handleKeyInputs()
+{
+    struct termios oldt, newt;
+    int ch;
+    int oldf;
+
+    // Get the terminal settings
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+
+    // Set the terminal to non-blocking mode
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+    // Read input
+    ch = getchar();
+
+    // Restore the old terminal settings
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+    if (ch == 'q')
+        return 0;
+    else if (ch == 'w')
+        printf("print: w\n");
+    else if (ch == 's')
+        printf("print: s\n");
+    else if (ch == 'a')
+        printf("print: a\n");
+    else if (ch == 'd')
+        printf("print: d\n");
+
     return 1;
 }
