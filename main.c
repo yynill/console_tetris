@@ -13,7 +13,7 @@ int generateRandomNumber(int min, int max);
 void renderGame(struct Tile board[HEIGHT][WIDTH], struct Shape activeShape);
 struct Shape generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col);
 void initTile(struct Tile *tile, int row, int col, int entry);
-int handleKeyInputs(struct Shape *activeShape);
+int handleKeyInputs(struct Tile board[HEIGHT][WIDTH], struct Shape *activeShape);
 
 int main()
 {
@@ -51,7 +51,7 @@ int main()
             activeShape = generateShape(board, ThisRandomShape, 3, 4);
         }
 
-        running = handleKeyInputs(&activeShape);
+        running = handleKeyInputs(board, &activeShape);
 
         // Limit frame rate
         usleep(5 * 1000000 / 60);
@@ -61,3 +61,7 @@ int main()
 
     return 0;
 }
+
+// to do
+// if on floor, turn positions into solids (2) on board, and romeve from acrive shape and make new active shape
+// also then detect with collisions with solid (2) blocks
