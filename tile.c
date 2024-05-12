@@ -19,8 +19,3 @@ int getEntry(struct Tile *tile)
 {
     return tile->entry;
 }
-
-void setEntry(struct Tile *tile, int entry)
-{
-    tile->entry = entry;
-}

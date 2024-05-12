@@ -19,5 +19,7 @@ void moveShapeRight(struct Shape *shape)
     shape->col++;
 }
 
-// int isShapeOnGround(struct Tile board[HEIGHT][WIDTH], struct Shape shape) {}
-// int shapeCollisio() {}
+void rotateShape(struct Shape *shape)
+{
+    shape->rotation = (shape->rotation + 1) % 4;
+}

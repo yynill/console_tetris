@@ -31,14 +31,16 @@ void renderGame(struct Tile board[HEIGHT][WIDTH], struct Shape activeShape)
     {
         for (int i = 0; i < WIDTH; i++)
         {
-            if (board[j][i].entry != 2)
+            if (board[j][i].entry == 1)
             {
                 board[j][i].entry = 0;
             }
         }
     }
+
     // update board
     const char *shape = tetromino[activeShape.index];
+    int rotation = activeShape.rotation; // 0, 1, 2, or 3
 
     int shapeRow = 0;
     for (int j = activeShape.row; j < activeShape.row + 4; j++)
@@ -46,7 +48,30 @@ void renderGame(struct Tile board[HEIGHT][WIDTH], struct Shape activeShape)
         int shapeCol = 0;
         for (int i = activeShape.col; i < activeShape.col + 4; i++)
         {
-            if (shape[shapeRow * 4 + shapeCol] == 'X')
+            int rotatedRow, rotatedCol;
+            // Rotate coordinates based on rotation value
+            if (rotation == 0)
+            {
+                rotatedRow = shapeRow;
+                rotatedCol = shapeCol;
+            }
+            else if (rotation == 1)
+            {
+                rotatedRow = shapeCol;
+                rotatedCol = 3 - shapeRow;
+            }
+            else if (rotation == 2)
+            {
+                rotatedRow = 3 - shapeRow;
+                rotatedCol = 3 - shapeCol;
+            }
+            else // rotation == 3
+            {
+                rotatedRow = 3 - shapeCol;
+                rotatedCol = shapeRow;
+            }
+
+            if (shape[rotatedRow * 4 + rotatedCol] == 'X')
             {
                 board[j][i].entry = 1;
             }
@@ -95,9 +120,20 @@ void renderGame(struct Tile board[HEIGHT][WIDTH], struct Shape activeShape)
         printf("─");
     }
     printf("┘\n");
+
+    // Print the board entries
+    printf("Board Entries:\n");
+    for (int j = 0; j < HEIGHT; j++)
+    {
+        for (int i = 0; i < WIDTH; i++)
+        {
+            printf("%d ", board[j][i].entry);
+        }
+        printf("\n");
+    }
 }
 
-struct Shape generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col)
+struct Shape generateShape(int shapeIndex, int row, int col)
 {
     struct Shape newShape;
 
@@ -112,6 +148,7 @@ struct Shape generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int
     newShape.moveDown = &moveShapeDown;
     newShape.moveLeft = &moveShapeLeft;
     newShape.moveRight = &moveShapeRight;
+    newShape.rotateShape = &rotateShape;
 
     newShape.index = shapeIndex;
     newShape.row = row;
@@ -120,7 +157,7 @@ struct Shape generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int
     return newShape;
 }
 
-int handleKeyInputs(struct Tile board[HEIGHT][WIDTH], struct Shape *activeShape)
+int handleKeyInputs(struct Tile (*board)[HEIGHT][WIDTH], struct Shape *activeShape, int *running)
 {
     struct termios oldt, newt;
     int ch;
@@ -154,12 +191,6 @@ int handleKeyInputs(struct Tile board[HEIGHT][WIDTH], struct Shape *activeShape)
         shapeRow++;
     }
 
-    printf("Points list:\n");
-    for (int i = 0; i < 4; i++)
-    {
-        printf("Point %d: (%d, %d)\n", i + 1, points[i].x, points[i].y);
-    }
-
     // check for X collisions
     int moveRightBlockage = 0;
     int moveLeftBlockage = 0;
@@ -168,26 +199,51 @@ int handleKeyInputs(struct Tile board[HEIGHT][WIDTH], struct Shape *activeShape)
 
     for (int i = 0; i < 4; i++)
     {
+        // right side boder
         if (points[i].x == WIDTH - 1)
         {
             moveRightBlockage = 1;
         }
+        // left side boder
         if (points[i].x == 0)
         {
             moveLeftBlockage = 1;
         }
-        if (points[i].y == HEIGHT - 1)
+        // bottum boder
+        if (points[i].y == HEIGHT)
         {
             tetrisCollision = 1;
+        }
+        // solid pieces below
+        if ((*board)[points[i].y][points[i].x].entry == 2)
+        {
+            tetrisCollision = 1;
+        }
+        // solid pieces to the right
+        if (points[i].x < WIDTH - 1 && (*board)[points[i].y][points[i].x + 1].entry == 2)
+        {
+            moveRightBlockage = 1;
+        }
+        // solid pieces to the left
+        if (points[i].x > 0 && (*board)[points[i].y][points[i].x - 1].entry == 2)
+        {
+            moveLeftBlockage = -1;
         }
     }
 
     if (tetrisCollision)
     {
-        for (int i = 0; i < 4; i++)
+        for (int j = 0; j < HEIGHT; j++)
         {
-            board[points[i].y][points[i].x].entry = 2;
+            for (int i = 0; i < WIDTH; i++)
+            {
+                if ((*board)[j][i].entry == 1)
+                {
+                    (*board)[j][i].entry = 2;
+                }
+            }
         }
+        return 1;
     }
 
     // Get the terminal settings
@@ -208,9 +264,9 @@ int handleKeyInputs(struct Tile board[HEIGHT][WIDTH], struct Shape *activeShape)
     fcntl(STDIN_FILENO, F_SETFL, oldf);
 
     if (ch == 'q')
-        return 0;
+        *running = 0;
     else if (ch == 'w')
-        printf("print: w\n");
+        activeShape->rotateShape(activeShape);
     else if (ch == 's')
         activeShape->moveDown(activeShape);
     else if (ch == 'a' && !moveLeftBlockage)
@@ -218,7 +274,5 @@ int handleKeyInputs(struct Tile board[HEIGHT][WIDTH], struct Shape *activeShape)
     else if (ch == 'd' && !moveRightBlockage)
         activeShape->moveRight(activeShape);
 
-    printf("active shape row: %d, col: %d\n", activeShape->row, activeShape->col);
-
-    return 1;
+    return 0;
 }

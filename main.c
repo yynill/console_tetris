@@ -11,9 +11,9 @@
 
 int generateRandomNumber(int min, int max);
 void renderGame(struct Tile board[HEIGHT][WIDTH], struct Shape activeShape);
-struct Shape generateShape(struct Tile board[HEIGHT][WIDTH], int shapeIndex, int row, int col);
+struct Shape generateShape(int shapeIndex, int row, int col);
 void initTile(struct Tile *tile, int row, int col, int entry);
-int handleKeyInputs(struct Tile board[HEIGHT][WIDTH], struct Shape *activeShape);
+int handleKeyInputs(struct Tile (*board)[HEIGHT][WIDTH], struct Shape *activeShape, int *running);
 
 int main()
 {
@@ -40,6 +40,8 @@ int main()
     NextRandomShape = generateRandomNumber(0, 6);
 
     int running = 1;
+    int autoMove = 0;
+
     while (running)
     {
         if (nextShape)
@@ -48,20 +50,25 @@ int main()
             NextRandomShape = generateRandomNumber(0, 6);
             nextShape = 0;
 
-            activeShape = generateShape(board, ThisRandomShape, 3, 4);
+            activeShape = generateShape(ThisRandomShape, 3, 4);
         }
 
-        running = handleKeyInputs(board, &activeShape);
+        renderGame(board, activeShape);
+
+        if (autoMove % 10 == 0)
+        {
+            activeShape.moveDown(&activeShape);
+            autoMove = 0;
+        }
+
+        nextShape = handleKeyInputs(&board, &activeShape, &running);
 
         // Limit frame rate
-        usleep(5 * 1000000 / 60);
-
-        renderGame(board, activeShape);
+        usleep(4 * 1000000 / 60);
+        autoMove++;
     }
 
     return 0;
 }
 
-// to do
-// if on floor, turn positions into solids (2) on board, and romeve from acrive shape and make new active shape
-// also then detect with collisions with solid (2) blocks
+// bug: when dashing down pieces with "s" sometimes pice slips to - 1 and just the solidifies
